@@ -5,10 +5,7 @@ import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-/**
- * Khuôn dạng cho các danh sách có phân trang (mục 6, 18 API Spec — Employee, MyAttendance).
- * Chỉ dùng cho 2 API có dữ liệu tăng dần không giới hạn theo thời gian, xem Changelog_TapTrack.md.
- */
+/** Khuôn dạng cho danh sách có phân trang — chỉ dùng cho API có dữ liệu tăng dần không giới hạn theo thời gian. */
 @Getter
 public class PageResponse<T> {
 

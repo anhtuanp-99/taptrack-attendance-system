@@ -34,7 +34,7 @@ public class Employee {
     @Comment("Mã nhân viên nội bộ công ty, duy nhất")
     private String employeeCode;
 
-    // Đặt tên cardCode (không phải cardId) để tránh nhầm là khóa ngoại — xem Changelog_TapTrack.md
+    // Đặt tên cardCode (không phải cardId) để tránh nhầm là khóa ngoại
     @Column(nullable = false, unique = true)
     @Comment("Mã đọc từ thẻ RFID dùng để chấm công, duy nhất")
     private String cardCode;

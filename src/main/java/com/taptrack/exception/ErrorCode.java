@@ -3,9 +3,8 @@ package com.taptrack.exception;
 import org.springframework.http.HttpStatus;
 
 /**
- * Danh mục toàn bộ mã lỗi nghiệp vụ của hệ thống — khớp 1-1 với bảng
- * "Danh sách errorCode và HTTP Status tương ứng" trong API_Spec_TapTrack.md.
- * Thêm lỗi mới ở đây, không tạo class Exception riêng (xem AppException).
+ * Danh mục toàn bộ mã lỗi nghiệp vụ của hệ thống.
+ * Thêm lỗi mới ở đây, không tạo class Exception riêng — xem {@link AppException}.
  */
 public enum ErrorCode {
 

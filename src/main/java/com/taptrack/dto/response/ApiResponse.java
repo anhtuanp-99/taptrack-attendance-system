@@ -3,10 +3,7 @@ package com.taptrack.dto.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 
-/**
- * Khuôn dạng response chung cho mọi REST endpoint (trừ message WebSocket).
- * Xem API_Spec_TapTrack.md — mục "Định dạng response chung — ApiResponse<T>".
- */
+/** Khuôn dạng response chung cho mọi REST endpoint, trừ message WebSocket. */
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {

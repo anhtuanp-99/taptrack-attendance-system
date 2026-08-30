@@ -9,7 +9,6 @@ import org.hibernate.annotations.Comment;
 /**
  * Tài khoản đăng nhập dùng chung cho mọi role (Employee lẫn Admin).
  * Tách riêng khỏi {@link Employee} vì Admin không có hồ sơ nghiệp vụ đi kèm.
- * Xem ERD_TapTrack.txt và Changelog_TapTrack.md (mục "Quyết định thiết kế dữ liệu").
  */
 @Entity
 @Table(name = "accounts")

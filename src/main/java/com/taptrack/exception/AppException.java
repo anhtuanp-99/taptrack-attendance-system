@@ -14,8 +14,7 @@ public class AppException extends RuntimeException {
 
     private final ErrorCode errorCode;
 
-    // Dữ liệu bổ sung đi kèm response lỗi, ví dụ ledCommand cho lỗi quẹt thẻ
-    // (API Spec mục 1: lỗi vẫn phải trả data.ledCommand, khác các lỗi thường có data=null)
+    // Dữ liệu bổ sung đi kèm response lỗi (ví dụ ledCommand cho lỗi quẹt thẻ) — không phải lỗi nào cũng có
     private final Map<String, Object> extraData;
 
     public AppException(ErrorCode errorCode) {
