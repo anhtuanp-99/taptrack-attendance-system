@@ -29,7 +29,7 @@ com.taptrack
 │   ├── AccountRepository.java
 │   ├── RefreshTokenRepository.java       (findByTokenHashAndRevokedFalse, deleteByAccountId)
 │   ├── DepartmentRepository.java
-│   ├── EmployeeRepository.java           (findAll(Specification, Pageable) — lọc departmentId/employmentStatus + phân trang)
+│   ├── EmployeeRepository.java           (findAll(Specification, Pageable) — lọc departmentId/employmentStatus + phân trang; countGroupedByDepartment tránh N+1)
 │   ├── ShiftTemplateRepository.java
 │   ├── ShiftAssignmentRepository.java
 │   ├── AttendanceRecordRepository.java   (findByEmployeeIdAndWorkDateBetween(..., Pageable))
@@ -53,14 +53,16 @@ com.taptrack
 │
 ├── controller/
 │   ├── AuthController.java
-│   ├── AttendanceController.java         (ESP32 gọi vào đây)
+│   ├── AttendanceController.java         (ESP32 gọi vào đây; yêu cầu X-Device-API-Key)
 │   ├── admin/
 │   │   ├── AccountController.java        (/api/admin/accounts — tạo Employee/Admin)
 │   │   ├── DepartmentController.java
 │   │   ├── EmployeeController.java       (GET/PUT/DELETE)
 │   │   ├── ShiftController.java
 │   │   ├── DashboardController.java
-│   │   └── ReportController.java
+│   │   ├── ReportController.java
+│   │   ├── AdminAttendanceController.java     (Admin xem/sửa/bổ sung attendance thủ công)
+│   │   └── UnknownCardController.java         (Admin lấy danh sách UNKNOWN_CARD gần nhất để cấp thẻ)
 │   ├── employee/
 │   │   └── MyAttendanceController.java   (/api/employee/my-attendance, /api/employee/my-schedule/week)
 │   └── websocket/
@@ -78,7 +80,7 @@ com.taptrack
 │   │   ├── ResetPasswordRequest.java
 │   │   ├── EmployeeUpdateRequest.java
 │   │   ├── ShiftTemplateRequest.java
-│   │   ├── ShiftAssignmentRequest.java    (dùng chung tạo mới và sửa)
+│   │   ├── ShiftAssignmentRequest.java    (dùng chung tạo mới và sửa; validate template/custom-time)
 │   │   ├── CardScanRequest.java
 │   │   └── AttendanceManualEditRequest.java
 │   │
@@ -102,16 +104,19 @@ com.taptrack
 │       ├── MonthlyReportResponse.java
 │       ├── AbsentEmployeeResponse.java
 │       ├── AttendanceManualEditResponse.java
+│       ├── UnknownCardResponse.java
 │       └── MyAttendanceResponse.java
 │
 ├── security/
 │   ├── SecurityConfig.java               (khai báo SecurityFilterChain)
 │   ├── JwtTokenProvider.java             (sinh/giải mã JWT)
 │   ├── JwtAuthFilter.java                (đọc header, set SecurityContext nếu token hợp lệ)
+│   ├── DeviceApiKeyFilter.java                (xác thực X-Device-API-Key cho endpoint ESP32)
 │   ├── JwtAuthenticationEntryPoint.java  (xử lý 401 khi thiếu/sai token)
 │   ├── JwtAccessDeniedHandler.java       (xử lý 403 khi đủ xác thực nhưng không đủ quyền)
 │   ├── UserPrincipal.java                (wrapper Account, implements UserDetails)
-│   └── CustomUserDetailsService.java     (tra Account theo email, bọc vào UserPrincipal)
+│   ├── CustomUserDetailsService.java     (tra Account theo email, bọc vào UserPrincipal)
+│   └── WebSocketAuthInterceptor.java     (xác thực JWT + ROLE_ADMIN khi CONNECT/SUBSCRIBE)
 │
 ├── exception/
 │   ├── ErrorCode.java                     (enum — mỗi giá trị gắn sẵn HttpStatus + message mặc định, khớp bảng errorCode trong API Spec)
@@ -138,3 +143,19 @@ src/test/java/com/taptrack/
 └── controller/
     └── AttendanceControllerTest.java
 ```
+
+
+## Business invariants cần enforce cả Service lẫn Database
+- `ACCOUNT.email` duy nhất.
+- `EMPLOYEE.accountId` duy nhất (1 Account ↔ tối đa 1 Employee).
+- `EMPLOYEE.cardCode` duy nhất sau khi normalize (trim + uppercase, loại khoảng trắng/phân cách không cần thiết).
+- `EMPLOYEE.employeeCode` duy nhất.
+- `SHIFT_ASSIGNMENT(employeeId, workDate)` duy nhất.
+- `ATTENDANCE_RECORD(employeeId, workDate)` duy nhất.
+- Một `SHIFT_ASSIGNMENT` phải dùng **một trong hai**: `shiftTemplateId` hoặc cặp `customStartTime + customEndTime`; không được thiếu cả hai hoặc dùng đồng thời.
+- Giờ kết thúc phải sau giờ bắt đầu; không hỗ trợ ca qua ngày.
+- Nếu một `SHIFT_ASSIGNMENT` đã có `ATTENDANCE_RECORD`, không được UPDATE/DELETE assignment.
+- Nhân viên `INACTIVE` không được chấm công và không được tạo phân ca mới.
+- Endpoint ESP32 chỉ nhận request có `X-Device-API-Key` hợp lệ; JWT người dùng không được dùng thay thế.
+- WebSocket `/topic/attendance` chỉ cho Admin đã xác thực.
+- Manual attendance create/update luôn ghi `AttendanceAuditLog`; audit log append-only.

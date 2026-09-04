@@ -7,6 +7,7 @@ Vị trí: `src/main/resources/static/` (trong project Spring Boot, phục vụ 
 
 ```
 static/
+├── login.html                    (1 cổng đăng nhập chung; redirect theo role)
 ├── shared/
 │   ├── css/base.css
 │   └── js/
@@ -128,3 +129,11 @@ static/
 │           │ └──────────┴───────┴───────┴─────────┘ │
 └───────────┴────────────────────────────────────────┘
 ```
+
+
+## Luồng đăng nhập
+`/login.html` gọi API đăng nhập chung. Sau khi nhận `role`, chuyển sang `/admin/...` hoặc `/employee/...`.
+Admin Dashboard dùng **REST cho CRUD/dữ liệu ban đầu** và **WebSocket chỉ cho cập nhật realtime**. Kết nối WebSocket phải mang JWT và chỉ ROLE_ADMIN được subscribe `/topic/attendance`.
+
+## Card enrollment
+Form nhân viên có nút `Lấy thẻ vừa quẹt`, gọi API lấy các `UNKNOWN_CARD_LOG` gần nhất để Admin chọn và điền `cardCode`.

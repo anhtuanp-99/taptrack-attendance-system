@@ -1,7 +1,7 @@
 # SRS — Đặc tả yêu cầu phần mềm
 ## Hệ thống Chấm công ứng dụng ESP32 và Spring Boot
 
-*(v4 — gộp cơ chế đăng nhập Admin/Employee thành 1 bảng Account chung, đồng bộ cardCode)*
+*(v5 — chốt bảo mật Device API-Key, khóa phân ca sau attendance, audit thủ công, backend-time cho OLED, và đồng bộ WebSocket/REST)*
 
 ### 1. Giới thiệu
 
@@ -28,9 +28,9 @@ Hệ thống cho phép nhân viên quẹt thẻ từ để chấm công vào/ra,
 **FR-2: Quản lý nhân viên**
 - FR-2.1: Chỉ Admin có quyền tạo/sửa/xóa hồ sơ nhân viên
 - FR-2.2: Khi tạo nhân viên: nhập họ tên (lưu ở Account, dùng chung mọi role), mã nhân viên, cấp cardCode (gắn với thẻ từ), chọn phòng ban (từ danh mục FR-1), nhập chức danh (job title — text tự do, chỉ mang tính mô tả, không dùng để phân quyền); đồng thời hệ thống tạo 1 Account liên kết (email, mật khẩu ban đầu do Admin đặt, role = EMPLOYEE — xem thêm FR-3)
-- FR-2.3: cardCode phải duy nhất trong hệ thống
+- FR-2.3: cardCode phải duy nhất sau khi chuẩn hóa (trim, uppercase, loại khoảng trắng/ký tự phân cách không cần thiết)
 - FR-2.4: Nhân viên không có chức năng tự đăng ký (Admin tạo tài khoản, xem thêm FR-3)
-- FR-2.5: Admin có thể sửa thông tin nhân viên đã tạo: họ tên, phòng ban (chuyển phòng ban), chức danh, cấp lại cardCode mới (trường hợp mất thẻ) — không cho đổi cardCode trùng với thẻ của nhân viên khác
+- FR-2.5: Admin có thể sửa thông tin nhân viên đã tạo: họ tên, phòng ban (chuyển phòng ban), chức danh, cấp lại cardCode mới (trường hợp mất thẻ) — không cho đổi cardCode trùng với thẻ của nhân viên khác; khi cập nhật cardCode phải áp dụng cùng quy tắc chuẩn hóa như FR-2.3
 - FR-2.6: Nhân viên nghỉ việc:
   - Nếu **chưa từng có bản ghi chấm công** (chưa từng có lượt quẹt thẻ thật nào — các ngày bị suy luận là VẮNG theo FR-6.5 không tính, vì không phải bản ghi thật) → Admin xóa cứng (hard delete) hồ sơ nhân viên, bao gồm cả **Account liên kết** (FR-3.1); đồng thời **xóa cascade toàn bộ bản ghi phân ca** (FR-4.4) đã gán cho nhân viên này — cả quá khứ lẫn tương lai, vì nhân viên đã bị xóa hẳn khỏi hệ thống nên giữ lại phân ca cũ không còn ý nghĩa, tránh dữ liệu mồ côi
   - Nếu **đã có lịch sử chấm công** → chặn xóa, chỉ cho chuyển status = INACTIVE để bảo toàn dữ liệu báo cáo cũ
@@ -55,7 +55,7 @@ Hệ thống cho phép nhân viên quẹt thẻ từ để chấm công vào/ra,
 - FR-4.5: 1 nhân viên trong 1 ngày chỉ thuộc 1 ca (không xử lý ca chồng lấn)
 - FR-4.6: Ngày nào nhân viên **không được phân ca** → hệ thống hiển thị rõ trạng thái **NGHỈ** khi xem lịch (không để trống/im lặng) — phân biệt rõ với ngày chưa nhập lịch, tránh nhầm lẫn khi đọc báo cáo
 - FR-4.7: Admin xem lịch phân ca của 1 nhân viên theo **tuần** (Thứ 2 → Chủ nhật), mỗi ngày hiển thị 1 trong 2 trạng thái: có ca (kèm tên ca/giờ) hoặc NGHỈ
-- FR-4.8: Admin có thể sửa hoặc xóa 1 phân ca đã tạo — chỉ áp dụng cho ngày **chưa diễn ra** (workDate ≥ hôm nay) hoặc ngày chưa có bản ghi chấm công nào; không cho sửa/xóa phân ca của ngày đã có dữ liệu chấm công thật, tránh phá vỡ tính toàn vẹn dữ liệu đã ghi
+- FR-4.8: Admin có thể sửa hoặc xóa 1 phân ca đã tạo **chỉ khi chưa có bất kỳ bản ghi chấm công thật nào cho nhân viên + ngày đó**. Khi đã có `ATTENDANCE_RECORD`, phân ca bị khóa để không làm thay đổi căn cứ tính trạng thái đã ghi nhận. Quy tắc này áp dụng cả ngày hôm nay.
 - FR-4.9: Không cho xóa 1 mẫu ca (`ShiftTemplate`) nếu đang có phân ca nào tham chiếu tới nó
 
 **FR-5: Chấm công qua thẻ từ**
@@ -63,7 +63,7 @@ Hệ thống cho phép nhân viên quẹt thẻ từ để chấm công vào/ra,
 - FR-5.2: ESP32 đọc cardCode, gửi lên Backend qua HTTP POST
 - FR-5.3: Backend xác định đây là chấm công **vào ca** hay **ra ca** dựa trên: nếu chưa có bản ghi check-in trong ngày → check-in; nếu đã có check-in nhưng chưa check-out → check-out
 - FR-5.4: Mỗi nhân viên chỉ có tối đa 1 lần check-in và 1 lần check-out hợp lệ trong 1 ngày
-- FR-5.5: Backend trả kết quả tức thời cho ESP32 để hiển thị đèn LED (xanh = hợp lệ, đỏ = lỗi/thẻ lạ)
+- FR-5.5: Backend trả kết quả tức thời cho ESP32 để hiển thị LED; response phải chứa `scanTime` do Backend tạo, để OLED dùng cùng một nguồn thời gian chuẩn
 - FR-5.6: cardCode không khớp bất kỳ nhân viên nào trong hệ thống (thẻ lạ) → Backend từ chối, **không tạo bản ghi chấm công**, ghi log riêng loại `UNKNOWN_CARD` (kèm cardCode, thời gian) để Admin phát hiện bất thường; ESP32 nhận lệnh LED đỏ
 - FR-5.7: Nhân viên quẹt thẻ lần thứ 3 trở lên trong cùng 1 ngày (đã có đủ 1 check-in + 1 check-out) → Backend từ chối, giữ nguyên check-out đã ghi nhận trước đó, không ghi đè; ESP32 nhận lệnh LED đỏ. Trường hợp cần sửa giờ chấm công thật, thực hiện qua kênh chính thức FR-9.3 (Admin sửa tay), không qua ESP32
 - FR-5.8: Nhân viên quẹt thẻ nhưng không được phân ca trong ngày đó → Backend từ chối, trả lỗi, không tạo bản ghi chấm công; ESP32 nhận lệnh LED đỏ
@@ -97,17 +97,22 @@ Hệ thống cho phép nhân viên quẹt thẻ từ để chấm công vào/ra,
 - FR-10.1: Đọc thẻ từ, gửi cardCode lên Backend
 - FR-10.2: Nhận lệnh: LED xanh (chấm công hợp lệ) / LED đỏ (lỗi, thẻ lạ, hoặc không có ca hôm nay)
 - FR-10.3: Hiển thị màn hình OLED thông tin cơ bản khi check-in/check-out: họ tên nhân viên, thời gian, trạng thái (đúng giờ/trễ/về sớm) — không dấu tiếng Việt; khi bị từ chối (thẻ lạ, không có ca, đã đủ lượt, tài khoản INACTIVE) hiển thị lý do tương ứng; tự động quay về màn hình chờ sau 2-3 giây
-- FR-10.4: Backend gọi lệnh bất đồng bộ; lỗi kết nối ESP32 chỉ ghi log, không ảnh hưởng đến việc ghi nhận chấm công trong Database
+- FR-10.4: Backend ghi nhận chấm công đồng bộ trong Database rồi trả response cho ESP32; WebSocket cập nhật Dashboard là bất đồng bộ. Lỗi kết nối tới WebSocket/Admin Dashboard không ảnh hưởng tới bản ghi Database.
+- FR-10.5: ESP32 không tự tạo thời gian chấm công; `scanTime` hiển thị OLED lấy từ `CardScanResponse` của Backend.
 
 **FR-11: Bảo mật**
 - FR-11.1: cardCode không phải thông tin nhạy cảm như PIN — không yêu cầu xác thực thêm bước 2 khi chấm công
 - FR-11.2: Mật khẩu trong Account (áp dụng chung cho mọi role) lưu dạng hash BCrypt, không lưu plaintext
-- FR-11.3: email trong Account phải duy nhất trong toàn hệ thống, không phân biệt role
+- FR-11.3: email trong Account phải duy nhất trong toàn hệ thống
+- FR-11.4: Endpoint `/api/attendance/card-scan` chỉ chấp nhận request có header `X-Device-API-Key` hợp lệ; JWT người dùng không thay thế Device API-Key.
+- FR-11.5: WebSocket `/topic/attendance` chỉ cho phép Admin đã xác thực và được phân quyền subscribe.
+- FR-11.6: Secret WiFi/Device API-Key của ESP32 không lưu trong file cấu hình được commit vào Git.
 
 **FR-12: Ghi log & Audit**
 - FR-12.1: Mọi bản ghi chấm công lưu: nhân viên, thời gian check-in/check-out, `checkInStatus` và `checkOutStatus` (2 trạng thái độc lập, FR-6.1), có phải do Admin sửa tay hay không
 - FR-12.2: Log không được xóa sau khi ghi, chỉ có thể thêm bản ghi điều chỉnh liên kết tới bản ghi gốc
 - FR-12.3: Log riêng cho các lượt quẹt thẻ lạ (`UNKNOWN_CARD`, FR-5.6)
+- FR-12.4: Mỗi lần Admin tạo/sửa attendance thủ công phải tạo `ATTENDANCE_AUDIT_LOG` append-only, lưu Admin thực hiện, thời gian, hành động, giá trị trước/sau và lý do nếu có.
 
 **FR-13 (Nice-to-have)**
 - FR-13.1: Xuất báo cáo chấm công ra Excel theo tháng
@@ -118,7 +123,7 @@ Hệ thống cho phép nhân viên quẹt thẻ từ để chấm công vào/ra,
 | Mã | Yêu cầu | Mô tả |
 |---|---|---|
 | NFR-1 | Bảo mật | Hash password Admin và Employee; phân quyền Employee/Admin (RBAC) |
-| NFR-2 | Toàn vẹn dữ liệu | Không tạo trùng bản ghi check-in/check-out cho cùng 1 nhân viên trong 1 ngày |
+| NFR-2 | Toàn vẹn dữ liệu | Không tạo trùng bản ghi attendance hoặc phân ca cho cùng 1 nhân viên trong 1 ngày; các ràng buộc quan trọng phải có cả Service validation và DB unique constraint |
 | NFR-3 | Hiệu năng | Phản hồi API dưới 1 giây (LAN nội bộ) |
 | NFR-4 | Khả năng mở rộng | Kiến trúc 4-layer, thiết kế cho phép mở rộng nhiều đầu đọc ESP32 trong tương lai dù bản hiện tại chỉ dùng 1 |
 | NFR-5 | Realtime | Admin Dashboard cập nhật trong 1-2 giây qua WebSocket |
@@ -154,3 +159,12 @@ Hệ thống cho phép nhân viên quẹt thẻ từ để chấm công vào/ra,
 | 10 | Ghi log & Audit (bao gồm thẻ lạ) | Hệ thống |
 | 11 | Xuất Excel | Admin (Nice-to-have) |
 | 12 | Thông báo vắng quá hạn | Hệ thống (Nice-to-have) |
+
+
+### 7. Quy tắc dữ liệu và triển khai bắt buộc (v5)
+1. Unique DB: `ACCOUNT.email`, `EMPLOYEE.accountId`, `EMPLOYEE.employeeCode`, `EMPLOYEE.cardCode`, `SHIFT_ASSIGNMENT(employeeId, workDate)`, `ATTENDANCE_RECORD(employeeId, workDate)`.
+2. `SHIFT_ASSIGNMENT`: hoặc `shiftTemplateId`, hoặc `customStartTime + customEndTime`; không cho cả hai trạng thái sai. `endTime > startTime`.
+3. CardCode được canonicalize trước khi lookup và lưu.
+4. `ATTENDANCE_RECORD` create/update phải transactional.
+5. Chốt `MISSING_CHECKOUT`: Scheduler cuối ngày + cơ chế recovery khi hệ thống bỏ lỡ job sau restart.
+6. WebSocket chỉ là kênh realtime; dữ liệu ban đầu/CRUD vẫn qua REST.
