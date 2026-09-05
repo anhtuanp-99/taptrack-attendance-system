@@ -12,12 +12,12 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
-public class JwtTokenProvider {
+public class JwtProvider {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.expiration}")
     private long jwtExpirationMs;
 
     // JJWT 0.12.x yêu cầu kiểu trả về là SecretKey thay vì Key chung chung
