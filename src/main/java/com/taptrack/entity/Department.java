@@ -1,25 +1,33 @@
 package com.taptrack.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.Comment;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-/**
- * Danh mục phòng ban (FR-1). Không cho xóa nếu còn Employee thuộc phòng ban này (FR-1.2)
- * — ràng buộc kiểm tra ở tầng Service, không thể diễn tả bằng schema thuần.
- */
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "departments")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Department {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    @Comment("Tên phòng ban, duy nhất trong hệ thống")
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

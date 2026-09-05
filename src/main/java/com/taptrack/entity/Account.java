@@ -2,39 +2,48 @@ package com.taptrack.entity;
 
 import com.taptrack.enums.Role;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.Comment;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-/**
- * Tài khoản đăng nhập dùng chung cho mọi role (Employee lẫn Admin).
- * Tách riêng khỏi {@link Employee} vì Admin không có hồ sơ nghiệp vụ đi kèm.
- */
+import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "accounts")
+@Table(
+        name = "accounts",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_account_email", columnNames = "email")
+        }
+)
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    @Comment("Email dùng để đăng nhập, duy nhất toàn hệ thống")
+    @Column(nullable = false, length = 100)
     private String email;
 
-    @Column(nullable = false)
-    @Comment("Mật khẩu đã hash BCrypt")
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    // Đặt ở Account (không phải Employee) vì Admin cũng cần tên hiển thị khi đăng nhập
-    @Column(nullable = false)
-    @Comment("Họ tên hiển thị, dùng chung cho mọi role")
+    @Column(name = "full_name", nullable = false, length = 100)
     private String fullName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Comment("Phân quyền: EMPLOYEE hoặc ADMIN")
+    @Column(nullable = false, length = 20)
     private Role role;
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }
