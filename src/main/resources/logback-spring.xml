@@ -9,7 +9,7 @@
 
     <!-- Đường dẫn lưu trữ tập tin log -->
     <property name="LOG_PATH" value="./logs"/>
-    <property name="LOG_FILE" value="${LOG_PATH}/course-management"/>
+    <property name="LOG_FILE" value="${LOG_PATH}/taptrack"/>
 
     <!-- 1. Appender in ra màn hình Console (IntelliJ) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -43,8 +43,8 @@
     <!-- Cấu hình Profile DEV   -->
     <!-- ======================================================== -->
     <springProfile name="dev">
-        <!-- Code dự án: Chỉ log INFO/WARN/ERROR (Gọn gàng, dễ đọc) -->
-        <logger name="com.tuan.course_management" level="INFO"/>
+        <!-- Code dự án TapTrack: Chỉ log INFO/WARN/ERROR -->
+        <logger name="com.taptrack" level="INFO"/>
 
         <!-- Tắt toàn bộ log SQL chi tiết và bind parameter của Hibernate -->
         <logger name="org.hibernate.SQL" level="WARN"/>
@@ -60,7 +60,7 @@
     <!-- Cấu hình Profile PROD  -->
     <!-- ======================================================== -->
     <springProfile name="prod">
-        <logger name="com.tuan.course_management" level="INFO"/>
+        <logger name="com.taptrack" level="INFO"/>
         <logger name="org.hibernate.SQL" level="WARN"/>
 
         <root level="WARN">
