@@ -1,38 +1,42 @@
 package com.taptrack.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
-/** Khuôn dạng response chung cho mọi REST endpoint, trừ message WebSocket. */
 @Getter
+@Setter
+@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
-    private final boolean success;
-    private final String message;
-    private final String errorCode;
-    private final T data;
-
-    private ApiResponse(boolean success, String message, String errorCode, T data) {
-        this.success = success;
-        this.message = message;
-        this.errorCode = errorCode;
-        this.data = data;
-    }
+    private boolean success;
+    private String message;
+    private String errorCode;
+    private T data;
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, null, null, data);
+        return ApiResponse.<T>builder()
+                .success(true)
+                .data(data)
+                .build();
     }
 
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, null, data);
+        return ApiResponse.<T>builder()
+                .success(true)
+                .message(message)
+                .data(data)
+                .build();
     }
 
-    public static <T> ApiResponse<T> error(String errorCode, String message) {
-        return new ApiResponse<>(false, message, errorCode, null);
-    }
-
-    public static <T> ApiResponse<T> error(String errorCode, String message, T data) {
-        return new ApiResponse<>(false, message, errorCode, data);
+    public static <T> ApiResponse<T> error(String message, String errorCode, T data) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .errorCode(errorCode)
+                .data(data)
+                .build();
     }
 }
