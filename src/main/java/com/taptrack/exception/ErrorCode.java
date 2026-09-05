@@ -1,34 +1,45 @@
 package com.taptrack.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-/**
- * Danh mục toàn bộ mã lỗi nghiệp vụ của hệ thống.
- * Thêm lỗi mới ở đây, không tạo class Exception riêng — xem {@link AppException}.
- */
+@Getter
 public enum ErrorCode {
+    // General Errors
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống nội bộ"),
+    BAD_REQUEST(HttpStatus.BAD_REQUEST, "Dữ liệu yêu cầu không hợp lệ"),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Xác thực không thành công"),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này"),
+    NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tài nguyên yêu cầu"),
 
-    EMPLOYEE_PROFILE_REQUIRED(HttpStatus.BAD_REQUEST, "Thiếu thông tin hồ sơ nhân viên"),
-    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "Dữ liệu không hợp lệ"),
+    // Auth Errors
+    INVALID_CREDENTIALS(HttpStatus.BAD_REQUEST, "Email hoặc mật khẩu không chính xác"),
+    INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "Refresh token không hợp lệ hoặc đã hết hạn"),
+    OLD_PASSWORD_INCORRECT(HttpStatus.BAD_REQUEST, "Mật khẩu cũ không chính xác"),
 
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Sai email hoặc mật khẩu"),
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "Refresh token không hợp lệ hoặc đã hết hạn"),
+    // Department & Employee Errors
+    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Phòng ban không tồn tại"),
+    DEPARTMENT_HAS_EMPLOYEES(HttpStatus.BAD_REQUEST, "Không thể xóa phòng ban đang chứa nhân viên"),
+    EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "Nhân viên không tồn tại"),
+    EMPLOYEE_INACTIVE(HttpStatus.FORBIDDEN, "Tài khoản nhân viên đã bị vô hiệu hóa"),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "Email đã được sử dụng trong hệ thống"),
+    DUPLICATE_EMPLOYEE_CODE(HttpStatus.CONFLICT, "Mã nhân viên đã tồn tại"),
+    DUPLICATE_CARD_CODE(HttpStatus.CONFLICT, "Mã thẻ từ đã được gán cho nhân viên khác"),
+    CANNOT_DELETE_EMPLOYEE_WITH_ATTENDANCE(HttpStatus.BAD_REQUEST, "Không thể xóa nhân viên đã có lịch sử chấm công, vui lòng chuyển sang INACTIVE"),
 
-    FORBIDDEN(HttpStatus.FORBIDDEN, "Không đủ quyền truy cập"),
+    // Shift Errors
+    SHIFT_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "Mẫu ca làm việc không tồn tại"),
+    SHIFT_TEMPLATE_IN_USE(HttpStatus.BAD_REQUEST, "Không thể xóa mẫu ca đang được áp dụng phân ca"),
+    SHIFT_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Phân ca không tồn tại"),
+    NO_SHIFT_ASSIGNED(HttpStatus.BAD_REQUEST, "Nhân viên không có ca làm việc trong ngày hôm nay"),
+    SHIFT_ASSIGNMENT_LOCKED(HttpStatus.BAD_REQUEST, "Phân ca đã có bản ghi chấm công, không thể sửa/xóa"),
+    INVALID_SHIFT_CONFIG(HttpStatus.BAD_REQUEST, "Cấu hình ca làm việc không hợp lệ (Phải chọn mẫu ca HOẶC giờ tùy chỉnh, giờ kết thúc phải sau giờ bắt đầu)"),
 
-    UNKNOWN_CARD(HttpStatus.NOT_FOUND, "Thẻ không tồn tại trong hệ thống"),
-    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy dữ liệu"),
-
-    NO_SHIFT_TODAY(HttpStatus.CONFLICT, "Nhân viên không được phân ca hôm nay"),
-    ALREADY_COMPLETED(HttpStatus.CONFLICT, "Đã chấm công đủ 2 lượt hôm nay"),
-    DEPARTMENT_NOT_EMPTY(HttpStatus.CONFLICT, "Không thể xóa phòng ban còn nhân viên"),
-    SHIFT_TEMPLATE_IN_USE(HttpStatus.CONFLICT, "Không thể xóa mẫu ca đang được tham chiếu"),
-    SHIFT_ASSIGNMENT_LOCKED(HttpStatus.CONFLICT, "Không thể sửa/xóa phân ca đã qua ngày hoặc đã có chấm công thật"),
-    DUPLICATE_RESOURCE(HttpStatus.CONFLICT, "Dữ liệu đã tồn tại"),
-
-    EMPLOYEE_INACTIVE(HttpStatus.LOCKED, "Tài khoản đã bị vô hiệu hóa"),
-
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống không lường trước");
+    // Attendance Errors
+    UNKNOWN_CARD(HttpStatus.NOT_FOUND, "Thẻ từ lạ, không tìm thấy nhân viên"),
+    ATTENDANCE_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bản ghi chấm công"),
+    ATTENDANCE_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "Nhân viên đã thực hiện đủ lượt check-in và check-out trong ngày"),
+    ATTENDANCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Đã tồn tại bản ghi chấm công cho ngày này");
 
     private final HttpStatus httpStatus;
     private final String defaultMessage;
@@ -36,13 +47,5 @@ public enum ErrorCode {
     ErrorCode(HttpStatus httpStatus, String defaultMessage) {
         this.httpStatus = httpStatus;
         this.defaultMessage = defaultMessage;
-    }
-
-    public HttpStatus getHttpStatus() {
-        return httpStatus;
-    }
-
-    public String getDefaultMessage() {
-        return defaultMessage;
     }
 }

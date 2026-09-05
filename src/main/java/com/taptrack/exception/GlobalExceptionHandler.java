@@ -1,54 +1,50 @@
 package com.taptrack.exception;
 
 import com.taptrack.dto.response.ApiResponse;
-import jakarta.validation.ConstraintViolationException;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Bắt toàn bộ exception ném ra từ Controller/Service, chuyển về đúng khuôn dạng
- * ApiResponse (success=false) cho mọi lỗi — không để lộ trang lỗi mặc định của Spring.
- */
-@Slf4j
+import java.util.HashMap;
+import java.util.Map;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Object>> handleAppException(AppException ex) {
-        log.warn("event=APP_EXCEPTION errorCode={} message={}", ex.getErrorCode(), ex.getMessage());
-        ApiResponse<Object> body = ApiResponse.error(ex.getErrorCode().name(), ex.getMessage(), ex.getExtraData());
-        return ResponseEntity.status(ex.getErrorCode().getHttpStatus()).body(body);
+        ApiResponse<Object> response = ApiResponse.error(
+                ex.getMessage(),
+                ex.getErrorCode().name(),
+                ex.getExtraData()
+        );
+        return new ResponseEntity<>(response, ex.getErrorCode().getHttpStatus());
     }
 
-    // Lỗi từ @Valid trên @RequestBody — lấy message đầu tiên trong các field lỗi để trả gọn
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Object>> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .map(FieldError::getDefaultMessage)
-                .orElse(ErrorCode.INVALID_REQUEST.getDefaultMessage());
-        log.warn("event=VALIDATION_ERROR message={}", message);
-        return ResponseEntity.badRequest().body(ApiResponse.error(ErrorCode.INVALID_REQUEST.name(), message));
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+
+        ApiResponse<Map<String, String>> response = ApiResponse.error(
+                "Dữ liệu không hợp lệ",
+                ErrorCode.BAD_REQUEST.name(),
+                errors
+        );
+        return ResponseEntity.badRequest().body(response);
     }
 
-    // Lỗi từ @Validated trên @RequestParam/@PathVariable (khác @Valid ở @RequestBody phía trên)
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Object>> handleConstraintViolation(ConstraintViolationException ex) {
-        log.warn("event=VALIDATION_ERROR message={}", ex.getMessage());
-        return ResponseEntity.badRequest()
-                .body(ApiResponse.error(ErrorCode.INVALID_REQUEST.name(), ErrorCode.INVALID_REQUEST.getDefaultMessage()));
-    }
-
-    // Lưới an toàn cuối cùng — mọi exception không lường trước, không để lộ chi tiết kỹ thuật ra ngoài
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleUnexpected(Exception ex) {
-        log.error("event=UNEXPECTED_ERROR message={}", ex.getMessage(), ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(ErrorCode.INTERNAL_ERROR.name(), ErrorCode.INTERNAL_ERROR.getDefaultMessage()));
+    public ResponseEntity<ApiResponse<Object>> handleGeneralException(Exception ex) {
+        ApiResponse<Object> response = ApiResponse.error(
+                ex.getMessage() != null ? ex.getMessage() : ErrorCode.INTERNAL_SERVER_ERROR.getDefaultMessage(),
+                ErrorCode.INTERNAL_SERVER_ERROR.name(),
+                null
+        );
+        return ResponseEntity.status(ErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus()).body(response);
     }
 }
