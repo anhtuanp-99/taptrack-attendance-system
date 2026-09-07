@@ -11,5 +11,7 @@ public interface ShiftAssignmentRepository extends JpaRepository<ShiftAssignment
     Optional<ShiftAssignment> findByEmployeeIdAndWorkDate(Long employeeId, LocalDate workDate);
     List<ShiftAssignment> findByEmployeeIdAndWorkDateBetween(Long employeeId, LocalDate startDate, LocalDate endDate);
     boolean existsByShiftTemplateId(Long shiftTemplateId);
+
+    // Bổ sung method này để phục vụ cascade xóa phân ca khi xóa nhân viên
     void deleteByEmployeeId(Long employeeId);
 }
