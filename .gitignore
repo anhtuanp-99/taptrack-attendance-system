@@ -44,6 +44,10 @@ Thumbs.db
 *.log
 logs/
 
+### Seeders ###
+**/*Seeder.java
+**/DataInitializer.java
+
 ### Java runtime ###
 *.class
 hs_err_pid*
