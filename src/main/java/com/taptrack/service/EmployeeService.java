@@ -1,147 +1,75 @@
-// EmployeeService.java
 package com.taptrack.service;
 
-import com.taptrack.dto.request.AccountCreateRequest;
 import com.taptrack.dto.request.EmployeeUpdateRequest;
 import com.taptrack.dto.response.EmployeeResponse;
-import com.taptrack.entity.Account;
-import com.taptrack.entity.Department;
-import com.taptrack.entity.Employee;
+import com.taptrack.entity.*;
 import com.taptrack.enums.EmploymentStatus;
-import com.taptrack.enums.Role;
-import com.taptrack.exception.AppException;
-import com.taptrack.exception.ErrorCode;
+import com.taptrack.exception.*;
+import com.taptrack.mapper.EmployeeMapper;
 import com.taptrack.repository.*;
+import com.taptrack.util.CardCodeNormalizer;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
 
-    private final AccountRepository accountRepository;
-    private final EmployeeRepository employeeRepository;
-    private final DepartmentRepository departmentRepository;
-    private final AttendanceRecordRepository attendanceRecordRepository;
-    private final ShiftAssignmentRepository shiftAssignmentRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final EmployeeRepository employeeRepo;
+    private final DepartmentRepository departmentRepo;
+    private final EmployeeMapper mapper;
+    private final CardCodeNormalizer normalizer;
 
-    private String normalizeCardCode(String cardCode) {
-        return cardCode != null ? cardCode.trim().replaceAll("\\s+", "").toUpperCase() : "";
+    @Transactional(readOnly = true)
+    public Page<EmployeeResponse> list(Long departmentId, String status, int page, int size) {
+        EmploymentStatus statusEnum = parseStatus(status);
+        Specification<Employee> spec = (root, q, cb) -> {
+            var ps = new ArrayList<Predicate>();
+            if (departmentId != null) ps.add(cb.equal(root.get("department").get("id"), departmentId));
+            if (statusEnum != null)   ps.add(cb.equal(root.get("employmentStatus"), statusEnum));
+            return cb.and(ps.toArray(new Predicate[0]));
+        };
+        Pageable p = PageRequest.of(page, size, Sort.by("id").descending());
+        return employeeRepo.findAll(spec, p).map(mapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public EmployeeResponse get(Long id) {
+        return mapper.toResponse(employeeRepo.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND)));
     }
 
     @Transactional
-    public EmployeeResponse createAccountWithEmployee(AccountCreateRequest request) {
-        if (accountRepository.existsByEmail(request.getEmail())) {
-            throw new AppException(ErrorCode.DUPLICATE_EMAIL);
-        }
-
-        Account account = Account.builder()
-                .email(request.getEmail().trim().toLowerCase())
-                .passwordHash(passwordEncoder.encode(request.getPassword()))
-                .fullName(request.getFullName().trim())
-                .role(request.getRole())
-                .build();
-
-        Account savedAccount = accountRepository.save(account);
-
-        if (request.getRole() == Role.EMPLOYEE) {
-            if (request.getEmployeeProfile() == null) {
-                throw new AppException(ErrorCode.BAD_REQUEST, "Thiếu thông tin hồ sơ nhân viên");
-            }
-
-            var profile = request.getEmployeeProfile();
-            String normalizedCard = normalizeCardCode(profile.getCardCode());
-
-            if (employeeRepository.existsByEmployeeCode(profile.getEmployeeCode())) {
-                throw new AppException(ErrorCode.DUPLICATE_EMPLOYEE_CODE);
-            }
-
-            if (employeeRepository.existsByCardCode(normalizedCard)) {
-                throw new AppException(ErrorCode.DUPLICATE_CARD_CODE);
-            }
-
-            Department department = departmentRepository.findById(profile.getDepartmentId())
-                    .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
-
-            Employee employee = Employee.builder()
-                    .account(savedAccount)
-                    .department(department)
-                    .employeeCode(profile.getEmployeeCode().trim())
-                    .cardCode(normalizedCard)
-                    .jobTitle(profile.getJobTitle())
-                    .employmentStatus(EmploymentStatus.ACTIVE)
-                    .build();
-
-            Employee savedEmp = employeeRepository.save(employee);
-            return mapToResponse(savedEmp);
-        }
-
-        return EmployeeResponse.builder()
-                .accountId(savedAccount.getId())
-                .email(savedAccount.getEmail())
-                .fullName(savedAccount.getFullName())
-                .build();
-    }
-
-    @Transactional
-    public EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest request) {
-        Employee employee = employeeRepository.findById(id)
+    public EmployeeResponse update(Long id, EmployeeUpdateRequest req) {
+        Employee e = employeeRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
-
-        String normalizedCard = normalizeCardCode(request.getCardCode());
-        if (employeeRepository.existsByCardCodeAndIdNot(normalizedCard, id)) {
-            throw new AppException(ErrorCode.DUPLICATE_CARD_CODE);
-        }
-
-        Department department = departmentRepository.findById(request.getDepartmentId())
+        Department d = departmentRepo.findById(req.departmentId())
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
-
-        employee.getAccount().setFullName(request.getFullName().trim());
-        employee.setDepartment(department);
-        employee.setCardCode(normalizedCard);
-        employee.setJobTitle(request.getJobTitle());
-
-        return mapToResponse(employeeRepository.save(employee));
-    }
-
-    @Transactional
-    public void deleteEmployee(Long id) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
-
-        boolean hasAttendance = attendanceRecordRepository.existsByEmployeeId(id);
-
-        if (hasAttendance) {
-            // Chuyển status sang INACTIVE để giữ dữ liệu lịch sử
-            employee.setEmploymentStatus(EmploymentStatus.INACTIVE);
-            employeeRepository.save(employee);
-        } else {
-            // Xóa cứng: Cascade xóa phân ca và Account liên kết
-            shiftAssignmentRepository.deleteByEmployeeId(id);
-            Long accountId = employee.getAccount().getId();
-            employeeRepository.delete(employee);
-            accountRepository.deleteById(accountId);
+        String normalized = normalizer.normalize(req.cardCode());
+        if (employeeRepo.existsByCardCodeAndIdNot(normalized, id)) {
+            throw new AppException(ErrorCode.CARD_CODE_DUPLICATE);
         }
+        e.getAccount().setFullName(req.fullName());
+        e.setDepartment(d);
+        e.setJobTitle(req.jobTitle());
+        e.setCardCode(normalized);
+        e.setEmploymentStatus(req.employmentStatus());
+        return mapper.toResponse(employeeRepo.save(e));
     }
 
-    private EmployeeResponse mapToResponse(Employee emp) {
-        return EmployeeResponse.builder()
-                .id(emp.getId())
-                .accountId(emp.getAccount().getId())
-                .email(emp.getAccount().getEmail())
-                .fullName(emp.getAccount().getFullName())
-                .departmentId(emp.getDepartment().getId())
-                .departmentName(emp.getDepartment().getName())
-                .employeeCode(emp.getEmployeeCode())
-                .cardCode(emp.getCardCode())
-                .jobTitle(emp.getJobTitle())
-                .employmentStatus(emp.getEmploymentStatus())
-                .createdAt(emp.getCreatedAt())
-                .build();
+    /** Bắt IllegalArgumentException từ Enum.valueOf để trả về VALIDATION_ERROR thay vì 500. */
+    private EmploymentStatus parseStatus(String status) {
+        if (status == null || status.isBlank()) return null;
+        try {
+            return EmploymentStatus.valueOf(status);
+        } catch (IllegalArgumentException ex) {
+            throw new AppException(ErrorCode.VALIDATION_ERROR);
+        }
     }
 }

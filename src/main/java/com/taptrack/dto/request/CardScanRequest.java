@@ -1,12 +1,6 @@
 package com.taptrack.dto.request;
+import jakarta.validation.constraints.*;
 
-import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
-public class CardScanRequest {
-    @NotBlank(message = "Mã thẻ từ không được để trống")
-    private String cardCode;
-}
+public record CardScanRequest(
+        @NotBlank(message = "Mã thẻ không được để trống")
+        String cardCode) {}

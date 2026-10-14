@@ -1,42 +1,24 @@
 package com.taptrack.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
-
     private boolean success;
     private String message;
     private String errorCode;
     private T data;
 
-    public static <T> ApiResponse<T> success(T data) {
+    public static <T> ApiResponse<T> ok(T data) {
         return ApiResponse.<T>builder()
-                .success(true)
-                .data(data)
-                .build();
+                .success(true).message("Thành công").data(data).build();
     }
+    public static <T> ApiResponse<T> ok() { return ok(null); }
 
-    public static <T> ApiResponse<T> success(String message, T data) {
+    public static <T> ApiResponse<T> fail(String code, String message, T extra) {
         return ApiResponse.<T>builder()
-                .success(true)
-                .message(message)
-                .data(data)
-                .build();
-    }
-
-    public static <T> ApiResponse<T> error(String message, String errorCode, T data) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .errorCode(errorCode)
-                .data(data)
-                .build();
+                .success(false).errorCode(code).message(message).data(extra).build();
     }
 }

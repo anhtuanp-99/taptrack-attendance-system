@@ -5,47 +5,49 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
-    // General Errors
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi hệ thống nội bộ"),
-    BAD_REQUEST(HttpStatus.BAD_REQUEST, "Dữ liệu yêu cầu không hợp lệ"),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Xác thực không thành công"),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "Bạn không có quyền thực hiện thao tác này"),
-    NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy tài nguyên yêu cầu"),
+    // Card-scan
+    UNKNOWN_CARD                (HttpStatus.BAD_REQUEST,  "Thẻ không tồn tại trong hệ thống",                              "The la"),
+    EMPLOYEE_INACTIVE           (HttpStatus.FORBIDDEN,    "Nhân viên đã nghỉ việc (INACTIVE)",                            "Nhan vien INACTIVE"),
+    NO_SHIFT_TODAY              (HttpStatus.BAD_REQUEST,  "Không có ca làm việc hôm nay",                                  "Khong co ca"),
+    ATTENDANCE_ALREADY_COMPLETE (HttpStatus.CONFLICT,     "Đã đủ lượt chấm công hôm nay",                                  "Da du luot"),
+    SCAN_CONFLICT               (HttpStatus.CONFLICT,     "Có thao tác chấm công khác đang xử lý, vui lòng quẹt lại",      "Thu lai"),
+    DEVICE_KEY_INVALID          (HttpStatus.UNAUTHORIZED, "Device API Key không hợp lệ",                                   null),
 
-    // Auth Errors
-    INVALID_CREDENTIALS(HttpStatus.BAD_REQUEST, "Email hoặc mật khẩu không chính xác"),
-    INVALID_REFRESH_TOKEN(HttpStatus.BAD_REQUEST, "Refresh token không hợp lệ hoặc đã hết hạn"),
-    OLD_PASSWORD_INCORRECT(HttpStatus.BAD_REQUEST, "Mật khẩu cũ không chính xác"),
+    // Auth
+    INVALID_CREDENTIALS         (HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không đúng",                                null),
+    OLD_PASSWORD_INCORRECT      (HttpStatus.BAD_REQUEST,  "Mật khẩu cũ không đúng",                                        null),
+    UNAUTHENTICATED             (HttpStatus.UNAUTHORIZED, "Chưa đăng nhập, token không hợp lệ hoặc đã hết hạn",            null),
+    ACCESS_DENIED               (HttpStatus.FORBIDDEN,    "Không có quyền thực hiện thao tác này",                         null),
+    EMAIL_DUPLICATE             (HttpStatus.CONFLICT,     "Email đã tồn tại",                                              null),
+    ACCOUNT_NOT_FOUND           (HttpStatus.NOT_FOUND,    "Không tìm thấy tài khoản",                                      null),
 
-    // Department & Employee Errors
-    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Phòng ban không tồn tại"),
-    DEPARTMENT_HAS_EMPLOYEES(HttpStatus.BAD_REQUEST, "Không thể xóa phòng ban đang chứa nhân viên"),
-    EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "Nhân viên không tồn tại"),
-    EMPLOYEE_INACTIVE(HttpStatus.FORBIDDEN, "Tài khoản nhân viên đã bị vô hiệu hóa"),
-    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "Email đã được sử dụng trong hệ thống"),
-    DUPLICATE_EMPLOYEE_CODE(HttpStatus.CONFLICT, "Mã nhân viên đã tồn tại"),
-    DUPLICATE_CARD_CODE(HttpStatus.CONFLICT, "Mã thẻ từ đã được gán cho nhân viên khác"),
-    CANNOT_DELETE_EMPLOYEE_WITH_ATTENDANCE(HttpStatus.BAD_REQUEST, "Không thể xóa nhân viên đã có lịch sử chấm công, vui lòng chuyển sang INACTIVE"),
+    // Nghiệp vụ
+    CARD_CODE_DUPLICATE          (HttpStatus.CONFLICT,    "Mã thẻ đã được cấp cho nhân viên khác",                         null),
+    EMPLOYEE_CODE_DUPLICATE      (HttpStatus.CONFLICT,    "Mã nhân viên đã tồn tại",                                       null),
+    EMPLOYEE_NOT_FOUND           (HttpStatus.NOT_FOUND,   "Không tìm thấy nhân viên",                                      null),
+    DEPARTMENT_NAME_DUPLICATE    (HttpStatus.CONFLICT,    "Tên phòng ban đã tồn tại",                                      null),
+    DEPARTMENT_NOT_FOUND         (HttpStatus.NOT_FOUND,   "Không tìm thấy phòng ban",                                      null),
+    DEPARTMENT_HAS_EMPLOYEES     (HttpStatus.CONFLICT,    "Phòng ban vẫn còn nhân viên (kể cả INACTIVE)",                  null),
+    SHIFT_TIME_INVALID           (HttpStatus.BAD_REQUEST, "Giờ kết thúc phải sau giờ bắt đầu",                             null),
+    SHIFT_TEMPLATE_NOT_FOUND     (HttpStatus.NOT_FOUND,   "Không tìm thấy mẫu ca",                                         null),
+    SHIFT_TEMPLATE_IN_USE        (HttpStatus.CONFLICT,    "Mẫu ca đang được phân ca tham chiếu",                           null),
+    SHIFT_ASSIGNMENT_NOT_FOUND   (HttpStatus.NOT_FOUND,   "Không tìm thấy phân ca",                                        null),
+    SHIFT_ASSIGNMENT_DUPLICATE   (HttpStatus.CONFLICT,    "Nhân viên đã có phân ca cho ngày này",                          null),
+    SHIFT_ASSIGNMENT_LOCKED      (HttpStatus.CONFLICT,    "Phân ca đã bị khóa vì đã có bản ghi chấm công",                 null),
+    NO_SHIFT_ASSIGNMENT_FOR_DATE (HttpStatus.BAD_REQUEST, "Không thể tạo chấm công cho ngày không có phân ca",             null),
+    ATTENDANCE_TIME_INVALID      (HttpStatus.BAD_REQUEST, "Giờ check-in/check-out không hợp lệ",                           null),
 
-    // Shift Errors
-    SHIFT_TEMPLATE_NOT_FOUND(HttpStatus.NOT_FOUND, "Mẫu ca làm việc không tồn tại"),
-    SHIFT_TEMPLATE_IN_USE(HttpStatus.BAD_REQUEST, "Không thể xóa mẫu ca đang được áp dụng phân ca"),
-    SHIFT_ASSIGNMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Phân ca không tồn tại"),
-    NO_SHIFT_ASSIGNED(HttpStatus.BAD_REQUEST, "Nhân viên không có ca làm việc trong ngày hôm nay"),
-    SHIFT_ASSIGNMENT_LOCKED(HttpStatus.BAD_REQUEST, "Phân ca đã có bản ghi chấm công, không thể sửa/xóa"),
-    INVALID_SHIFT_CONFIG(HttpStatus.BAD_REQUEST, "Cấu hình ca làm việc không hợp lệ (Phải chọn mẫu ca HOẶC giờ tùy chỉnh, giờ kết thúc phải sau giờ bắt đầu)"),
+    // Chung
+    VALIDATION_ERROR (HttpStatus.BAD_REQUEST,            "Dữ liệu đầu vào không hợp lệ (chi tiết trong extraData)",       null),
+    INTERNAL_ERROR   (HttpStatus.INTERNAL_SERVER_ERROR,  "Lỗi hệ thống không xác định",                                   "Loi he thong");
 
-    // Attendance Errors
-    UNKNOWN_CARD(HttpStatus.NOT_FOUND, "Thẻ từ lạ, không tìm thấy nhân viên"),
-    ATTENDANCE_RECORD_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy bản ghi chấm công"),
-    ATTENDANCE_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "Nhân viên đã thực hiện đủ lượt check-in và check-out trong ngày"),
-    ATTENDANCE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Đã tồn tại bản ghi chấm công cho ngày này");
+    private final HttpStatus status;
+    private final String message;
+    private final String oledMessage;
 
-    private final HttpStatus httpStatus;
-    private final String defaultMessage;
-
-    ErrorCode(HttpStatus httpStatus, String defaultMessage) {
-        this.httpStatus = httpStatus;
-        this.defaultMessage = defaultMessage;
+    ErrorCode(HttpStatus status, String message, String oledMessage) {
+        this.status = status;
+        this.message = message;
+        this.oledMessage = oledMessage;
     }
 }

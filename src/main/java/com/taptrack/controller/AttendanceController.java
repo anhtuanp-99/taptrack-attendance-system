@@ -1,24 +1,28 @@
 package com.taptrack.controller;
 
 import com.taptrack.dto.request.CardScanRequest;
-import com.taptrack.dto.response.ApiResponse;
 import com.taptrack.dto.response.CardScanResponse;
-import com.taptrack.service.AttendanceService;
+import com.taptrack.service.CardScanResult;
+import com.taptrack.service.CardScanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/attendance")
+@RequestMapping("/api/v1/attendance")
 @RequiredArgsConstructor
 public class AttendanceController {
 
-    private final AttendanceService attendanceService;
+    private final CardScanService cardScanService;
 
+    /**
+     * Trả thẳng CardScanResponse (KHÔNG bọc ApiResponse) — ESP32 parse trực tiếp.
+     * HttpStatus phản ánh đúng ErrorCode (200/400/403/409).
+     */
     @PostMapping("/card-scan")
-    public ResponseEntity<ApiResponse<CardScanResponse>> scanCard(@Valid @RequestBody CardScanRequest request) {
-        CardScanResponse response = attendanceService.processCardScan(request);
-        return ResponseEntity.ok(ApiResponse.success("Xử lý quét thẻ thành công", response));
+    public ResponseEntity<CardScanResponse> cardScan(@Valid @RequestBody CardScanRequest req) {
+        CardScanResult result = cardScanService.scan(req.cardCode());
+        return ResponseEntity.status(result.status()).body(result.body());
     }
 }

@@ -1,41 +1,53 @@
 package com.taptrack.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.taptrack.dto.response.ApiResponse;
+import com.taptrack.exception.ErrorCode;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
+/** Chỉ chạy cho path card-scan; so sánh key theo constant-time. */
 @Component
+@RequiredArgsConstructor
 public class DeviceApiKeyFilter extends OncePerRequestFilter {
 
-    @Value("${taptrack.device.api-key}")
-    private String expectedApiKey;
+    private final ObjectMapper objectMapper;
+
+    @Value("${app.device.api-key}")
+    private String expectedKey;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(HttpServletRequest req) {
+        return !req.getRequestURI().equals("/api/v1/attendance/card-scan");
+    }
 
-        String requestURI = request.getRequestURI();
-
-        // Chỉ áp dụng lọc API Key đối với endpoint dành riêng cho thiết bị ESP32 quẹt thẻ
-        if (requestURI.startsWith("/api/attendance/card-scan")) {
-            String apiKeyHeader = request.getHeader("X-Device-API-Key");
-
-            if (apiKeyHeader == null || !apiKeyHeader.equals(expectedApiKey)) {
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                response.setContentType("application/json");
-                response.getWriter().write("{\"success\": false, \"message\": \"Device API Key không hợp lệ hoặc bị thiếu\", \"errorCode\": \"INVALID_DEVICE_KEY\"}");
-                return;
-            }
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+                                    FilterChain chain) throws ServletException, IOException {
+        String provided = req.getHeader("X-Device-API-Key");
+        if (!constantTimeEquals(provided, expectedKey)) {
+            res.setStatus(ErrorCode.DEVICE_KEY_INVALID.getStatus().value());
+            res.setContentType("application/json;charset=UTF-8");
+            res.getWriter().write(objectMapper.writeValueAsString(
+                    ApiResponse.fail(ErrorCode.DEVICE_KEY_INVALID.name(),
+                            ErrorCode.DEVICE_KEY_INVALID.getMessage(), null)));
+            return;
         }
+        chain.doFilter(req, res);
+    }
 
-        filterChain.doFilter(request, response);
+    private boolean constantTimeEquals(String a, String b) {
+        if (a == null || b == null) return false;
+        return MessageDigest.isEqual(a.getBytes(StandardCharsets.UTF_8),
+                b.getBytes(StandardCharsets.UTF_8));
     }
 }

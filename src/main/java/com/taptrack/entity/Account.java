@@ -3,47 +3,38 @@ package com.taptrack.entity;
 import com.taptrack.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "accounts",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_account_email", columnNames = "email")
-        }
-)
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "account",
+        uniqueConstraints = @UniqueConstraint(name = "uk_account_email", columnNames = "email"))
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Account {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 120)
     private String email;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "full_name", nullable = false, length = 100)
+    @Column(name = "full_name", nullable = false, length = 120)
     private String fullName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @PrePersist void onCreate() {
+        var now = LocalDateTime.now();
+        createdAt = now; updatedAt = now;
+    }
+    @PreUpdate void onUpdate() { updatedAt = LocalDateTime.now(); }
 }

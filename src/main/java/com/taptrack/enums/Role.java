@@ -1,6 +1,3 @@
 package com.taptrack.enums;
 
-public enum Role {
-    ADMIN,
-    EMPLOYEE
-}
+public enum Role { EMPLOYEE, ADMIN }

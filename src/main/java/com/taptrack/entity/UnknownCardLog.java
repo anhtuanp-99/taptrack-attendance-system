@@ -2,23 +2,16 @@ package com.taptrack.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "unknown_card_logs")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "unknown_card_log")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class UnknownCardLog {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "card_code", nullable = false, length = 50)
+    @Column(name = "card_code", nullable = false, length = 64)
     private String cardCode;
 
     @Column(name = "scan_time", nullable = false)

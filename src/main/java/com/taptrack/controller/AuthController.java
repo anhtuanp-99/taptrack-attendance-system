@@ -1,32 +1,30 @@
 package com.taptrack.controller;
 
-import com.taptrack.dto.request.LoginRequest;
-import com.taptrack.dto.response.ApiResponse;
-import com.taptrack.dto.response.LoginResponse;
+import com.taptrack.dto.request.*;
+import com.taptrack.dto.response.*;
+import com.taptrack.security.UserPrincipal;
 import com.taptrack.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(
-            @Valid @RequestBody LoginRequest request
-    ) {
-        LoginResponse response = authService.login(request);
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
+        return ApiResponse.ok(authService.login(req));
+    }
 
-        return ResponseEntity.ok(
-                ApiResponse.success("Đăng nhập thành công", response)
-        );
+    @PostMapping("/change-password")
+    public ApiResponse<Void> changePassword(@AuthenticationPrincipal UserPrincipal p,
+                                            @Valid @RequestBody ChangePasswordRequest req) {
+        authService.changePassword(p.getId(), req);
+        return ApiResponse.ok();
     }
 }

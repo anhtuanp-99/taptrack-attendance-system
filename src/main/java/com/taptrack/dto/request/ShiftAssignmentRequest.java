@@ -1,22 +1,13 @@
 package com.taptrack.dto.request;
-
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
-
+import jakarta.validation.constraints.*;
 import java.time.LocalDate;
-import java.time.LocalTime;
 
-@Getter
-@Setter
-public class ShiftAssignmentRequest {
-    @NotNull(message = "Nhân viên không được để trống")
-    private Long employeeId;
+public record ShiftAssignmentRequest(
+        @NotNull(message = "Nhân viên không được để trống")
+        Long employeeId,
 
-    @NotNull(message = "Ngày làm việc không được để trống")
-    private LocalDate workDate;
+        @NotNull(message = "Mẫu ca không được để trống")
+        Long shiftTemplateId,
 
-    private Long shiftTemplateId;
-    private LocalTime customStartTime;
-    private LocalTime customEndTime;
-}
+        @NotNull(message = "Ngày làm việc không được để trống")
+        LocalDate workDate) {}

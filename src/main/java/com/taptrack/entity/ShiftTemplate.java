@@ -2,20 +2,13 @@ package com.taptrack.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "shift_templates")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "shift_template")
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class ShiftTemplate {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, length = 100)

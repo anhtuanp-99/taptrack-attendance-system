@@ -1,6 +1,3 @@
 package com.taptrack.enums;
 
-public enum DayScheduleStatus {
-    SHIFT,
-    OFF
-}
+public enum DayScheduleStatus { SHIFT, OFF }

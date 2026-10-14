@@ -1,30 +1,23 @@
-// AccountCreateRequest.java (Dùng chung tạo Employee/Admin)
 package com.taptrack.dto.request;
-
 import com.taptrack.enums.Role;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.*;
 
-@Getter
-@Setter
-public class AccountCreateRequest {
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không đúng định dạng")
-    private String email;
+public record AccountCreateRequest(
+        @NotBlank(message = "Email không được để trống")
+        @Email(message = "Email không hợp lệ")
+        String email,
 
-    @NotBlank(message = "Mật khẩu không được để trống")
-    private String password;
+        @NotBlank(message = "Họ tên không được để trống")
+        @Size(max = 120, message = "Họ tên tối đa 120 ký tự")
+        String fullName,
 
-    @NotBlank(message = "Họ tên không được để trống")
-    private String fullName;
+        @NotBlank(message = "Mật khẩu ban đầu không được để trống")
+        @Size(min = 6, max = 100, message = "Mật khẩu ban đầu phải từ 6 đến 100 ký tự")
+        String initialPassword,
 
-    @NotNull(message = "Role không được để trống")
-    private Role role;
+        @NotNull(message = "Vai trò không được để trống")
+        Role role,
 
-    @Valid
-    private EmployeeProfileRequest employeeProfile; // Bắt buộc nếu role = EMPLOYEE
-}
+        @Valid
+        EmployeeProfileRequest employeeProfile) {}

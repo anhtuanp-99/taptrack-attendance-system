@@ -1,36 +1,46 @@
-// EmployeeController.java
 package com.taptrack.controller.admin;
 
-import com.taptrack.dto.request.AccountCreateRequest;
 import com.taptrack.dto.request.EmployeeUpdateRequest;
-import com.taptrack.dto.response.ApiResponse;
-import com.taptrack.dto.response.EmployeeResponse;
-import com.taptrack.service.EmployeeService;
+import com.taptrack.dto.response.*;
+import com.taptrack.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 @RestController
-@RequestMapping("/api/admin/employees")
+@RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final ShiftService shiftService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<EmployeeResponse>> createAccount(@Valid @RequestBody AccountCreateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Tạo tài khoản/nhân viên thành công", employeeService.createAccountWithEmployee(request)));
+    @GetMapping("/employees")
+    public ApiResponse<PageResponse<EmployeeResponse>> list(
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String employmentStatus,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.ok(PageResponse.from(
+                employeeService.list(departmentId, employmentStatus, page, size)));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(@PathVariable Long id, @Valid @RequestBody EmployeeUpdateRequest request) {
-        return ResponseEntity.ok(ApiResponse.success("Cập nhật thông tin nhân viên thành công", employeeService.updateEmployee(id, request)));
+    @GetMapping("/employees/{id}")
+    public ApiResponse<EmployeeResponse> get(@PathVariable Long id) {
+        return ApiResponse.ok(employeeService.get(id));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
-        employeeService.deleteEmployee(id);
-        return ResponseEntity.ok(ApiResponse.success("Xử lý xóa/vô hiệu hóa nhân viên thành công", null));
+    @PutMapping("/employees/{id}")
+    public ApiResponse<EmployeeResponse> update(@PathVariable Long id,
+                                                @Valid @RequestBody EmployeeUpdateRequest req) {
+        return ApiResponse.ok(employeeService.update(id, req));
+    }
+
+    @GetMapping("/employees/{id}/schedule/week")
+    public ApiResponse<WeeklyScheduleResponse> schedule(@PathVariable Long id,
+                                                        @RequestParam String weekStart) {
+        return ApiResponse.ok(shiftService.weeklySchedule(id, LocalDate.parse(weekStart)));
     }
 }

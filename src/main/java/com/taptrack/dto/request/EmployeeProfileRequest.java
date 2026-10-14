@@ -1,21 +1,17 @@
 package com.taptrack.dto.request;
+import jakarta.validation.constraints.*;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+public record EmployeeProfileRequest(
+        @NotBlank(message = "Mã nhân viên không được để trống")
+        @Size(max = 50, message = "Mã nhân viên tối đa 50 ký tự")
+        String employeeCode,
 
-@Getter
-@Setter
-public class EmployeeProfileRequest {
-    @NotNull(message = "Phòng ban không được để trống")
-    private Long departmentId;
+        @NotBlank(message = "Mã thẻ không được để trống")
+        @Size(max = 64, message = "Mã thẻ tối đa 64 ký tự")
+        String cardCode,
 
-    @NotBlank(message = "Mã nhân viên không được để trống")
-    private String employeeCode;
+        @NotNull(message = "Phòng ban không được để trống")
+        Long departmentId,
 
-    @NotBlank(message = "Mã thẻ từ không được để trống")
-    private String cardCode;
-
-    private String jobTitle;
-}
+        @Size(max = 100, message = "Chức danh tối đa 100 ký tự")
+        String jobTitle) {}

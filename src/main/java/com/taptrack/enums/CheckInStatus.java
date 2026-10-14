@@ -1,6 +1,3 @@
 package com.taptrack.enums;
 
-public enum CheckInStatus {
-    ON_TIME,
-    LATE
-}
+public enum CheckInStatus { ON_TIME, LATE }

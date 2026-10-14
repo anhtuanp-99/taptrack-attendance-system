@@ -1,21 +1,21 @@
 package com.taptrack.dto.request;
+import com.taptrack.enums.EmploymentStatus;
+import jakarta.validation.constraints.*;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.Setter;
+public record EmployeeUpdateRequest(
+        @NotBlank(message = "Họ tên không được để trống")
+        @Size(max = 120, message = "Họ tên tối đa 120 ký tự")
+        String fullName,
 
-@Getter
-@Setter
-public class EmployeeUpdateRequest {
-    @NotBlank(message = "Họ tên không được để trống")
-    private String fullName;
+        @NotNull(message = "Phòng ban không được để trống")
+        Long departmentId,
 
-    @NotNull(message = "Phòng ban không được để trống")
-    private Long departmentId;
+        @Size(max = 100, message = "Chức danh tối đa 100 ký tự")
+        String jobTitle,
 
-    @NotBlank(message = "Mã thẻ từ không được để trống")
-    private String cardCode;
+        @NotBlank(message = "Mã thẻ không được để trống")
+        @Size(max = 64, message = "Mã thẻ tối đa 64 ký tự")
+        String cardCode,
 
-    private String jobTitle;
-}
+        @NotNull(message = "Trạng thái làm việc không được để trống")
+        EmploymentStatus employmentStatus) {}

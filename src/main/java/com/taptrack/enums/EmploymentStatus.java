@@ -1,6 +1,3 @@
 package com.taptrack.enums;
 
-public enum EmploymentStatus {
-    ACTIVE,
-    INACTIVE
-}
+public enum EmploymentStatus { ACTIVE, INACTIVE }
