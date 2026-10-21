@@ -35,10 +35,10 @@ public class AccountService {
                 .build();
         accountRepo.save(acc);
 
-        // Role ADMIN: không cần hồ sơ Employee
+        Long employeeId = null; // Mặc định là null cho ADMIN
+
         if (req.role() == Role.EMPLOYEE) {
             if (req.employeeProfile() == null) {
-                // Yêu cầu phải có hồ sơ khi tạo Employee
                 throw new AppException(ErrorCode.VALIDATION_ERROR);
             }
             var p = req.employeeProfile();
@@ -52,16 +52,21 @@ public class AccountService {
             Department dept = departmentRepo.findById(p.departmentId())
                     .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-            employeeRepo.save(Employee.builder()
+            Employee emp = Employee.builder()
                     .account(acc)
                     .department(dept)
                     .employeeCode(p.employeeCode())
                     .cardCode(normalizedCard)
                     .jobTitle(p.jobTitle())
                     .employmentStatus(EmploymentStatus.ACTIVE)
-                    .build());
+                    .build();
+            emp = employeeRepo.save(emp);
+
+            employeeId = emp.getId(); // Lấy ID của Employee vừa tạo
         }
-        return new AccountResponse(acc.getId(), acc.getEmail(), acc.getFullName(), acc.getRole());
+
+        // Trả về cả Account ID và Employee ID
+        return new AccountResponse(acc.getId(), employeeId, acc.getEmail(), acc.getFullName(), acc.getRole());
     }
 
     @Transactional

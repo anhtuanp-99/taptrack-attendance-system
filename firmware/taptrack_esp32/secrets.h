@@ -1,0 +1,9 @@
+#ifndef SECRETS_H
+#define SECRETS_H
+
+#define WIFI_SSID ":))-5g"
+#define WIFI_PASSWORD "14504202"
+
+#define DEVICE_API_KEY "TAPTRACK-ESP32-SECRET-KEY-2026"
+
+#endif
