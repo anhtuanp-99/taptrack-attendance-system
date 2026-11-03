@@ -12,6 +12,8 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+import java.security.Principal;
+
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
@@ -25,26 +27,18 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         StompHeaderAccessor acc = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (acc == null) return message;
 
-        if (StompCommand.CONNECT.equals(acc.getCommand())
-                || StompCommand.SUBSCRIBE.equals(acc.getCommand())) {
-
-            // Chỉ cho SUBSCRIBE vào /topic/attendance
-            if (StompCommand.SUBSCRIBE.equals(acc.getCommand())) {
-                String dest = acc.getDestination();
-                if (dest == null || !dest.startsWith(TOPIC_ATTENDANCE)) {
-                    throw new IllegalArgumentException("Chỉ được subscribe " + TOPIC_ATTENDANCE);
-                }
-            }
-
+        // 1. Xác thực khi CONNECT
+        if (StompCommand.CONNECT.equals(acc.getCommand())) {
             String header = acc.getFirstNativeHeader("Authorization");
             if (header == null || !header.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("Thiếu Authorization header");
+                throw new IllegalArgumentException("Thiếu Authorization header khi CONNECT");
             }
+
             try {
                 Claims c = jwt.parse(header.substring(7)).getPayload();
                 Role role = Role.valueOf(c.get("role", String.class));
                 if (role != Role.ADMIN) {
-                    throw new IllegalArgumentException("Chỉ ADMIN được subscribe");
+                    throw new IllegalArgumentException("Chỉ ADMIN mới được kết nối WebSocket giám sát");
                 }
                 var principal = new UserPrincipal(
                         Long.valueOf(c.getSubject()),
@@ -58,6 +52,21 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 throw new IllegalArgumentException("Token không hợp lệ: " + ex.getMessage());
             }
         }
+
+        // 2. Kiểm tra khi SUBSCRIBE
+        if (StompCommand.SUBSCRIBE.equals(acc.getCommand())) {
+            String dest = acc.getDestination();
+            if (dest == null || !dest.startsWith(TOPIC_ATTENDANCE)) {
+                throw new IllegalArgumentException("Chỉ được subscribe " + TOPIC_ATTENDANCE);
+            }
+
+            // Kiểm tra session đã được xác thực trước đó chưa
+            Principal user = acc.getUser();
+            if (user == null) {
+                throw new IllegalArgumentException("Chưa xác thực phiên kết nối");
+            }
+        }
+
         return message;
     }
 }
