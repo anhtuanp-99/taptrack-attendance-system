@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,8 +75,12 @@ public class CardScanService {
                 .findByEmployeeIdAndWorkDate(emp.getId(), today)
                 .orElse(null);
 
-        if (existing == null)                   return doCheckIn(emp, assignment.getShiftTemplate(), today);
-        if (existing.getCheckOutTime() == null) return doCheckOut(emp, assignment.getShiftTemplate(), existing);
+        if (existing == null) {
+            return doCheckIn(emp, assignment.getShiftTemplate(), today);
+        }
+        if (existing.getCheckOutTime() == null) {
+            return doCheckOut(emp, assignment.getShiftTemplate(), existing);
+        }
         return errorResult(ErrorCode.ATTENDANCE_ALREADY_COMPLETE, emp);
     }
 
@@ -98,8 +101,11 @@ public class CardScanService {
         }
 
         AttendanceRecord rec = AttendanceRecord.builder()
-                .employee(emp).workDate(today)
-                .checkInTime(now).checkInStatus(status).lateMinutes(lateMinutes)
+                .employee(emp)
+                .workDate(today)
+                .checkInTime(now)
+                .checkInStatus(status)
+                .lateMinutes(lateMinutes)
                 .build();
 
         try {
@@ -165,13 +171,18 @@ public class CardScanService {
         Long empId = (emp != null) ? emp.getId() : null;
         String empName = (emp != null) ? emp.getAccount().getFullName() : null;
 
+        LocalDateTime now = time.now();
+        String formattedOled = oled + "\n" + now.format(HHmm);
+
         CardScanResponse body = new CardScanResponse(
-                time.now(),
+                now,
                 empId,
                 empName,
-                null, null, null,
+                null,
+                null,
+                null,
                 LedCommand.RED,
-                oled);
+                formattedOled);
 
         return CardScanResult.of(body, code.getStatus());
     }
