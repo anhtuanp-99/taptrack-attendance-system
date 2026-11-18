@@ -5,6 +5,8 @@ import { AdminLayout } from './components/layout/AdminLayout';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { EmployeeListPage } from './features/employees/EmployeeListPage';
 import { EmployeePortalPage } from './features/portal/EmployeePortalPage';
+import { DepartmentListPage } from './features/departments/DepartmentListPage';
+import { ShiftManagementPage } from './features/shifts/ShiftManagementPage';
 
 // Guard bảo vệ Route: Kiểm tra đăng nhập và phân quyền theo Role
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole?: string }> = ({
@@ -47,8 +49,8 @@ function App() {
 
                     {/* Các route quản trị chức năng sẽ làm tiếp ở Giai đoạn 3 */}
                     <Route path="employees" element={<EmployeeListPage />} />
-                    <Route path="departments" element={<div className="p-4 text-slate-500">Chức năng Quản lý Phòng ban đang hoàn thiện</div>} />
-                    <Route path="shifts" element={<div className="p-4 text-slate-500">Chức năng Quản lý Ca làm việc đang hoàn thiện</div>} />
+                    <Route path="departments" element={<DepartmentListPage />} />
+                    <Route path="shifts" element={<ShiftManagementPage />} />
                     <Route path="attendance" element={<div className="p-4 text-slate-500">Chức năng Lịch sử Chấm công đang hoàn thiện</div>} />
                 </Route>
 
