@@ -24,10 +24,10 @@ export interface ShiftAssignmentResponse {
     workDate: string;
 }
 
-export type DayScheduleStatus = 'ASSIGNED' | 'OFF' | string;
+export type DayScheduleStatus = 'SHIFT' | 'OFF';
 
 export interface DayScheduleItem {
-    date: string;
+    date: string; // YYYY-MM-DD
     status: DayScheduleStatus;
     shiftName: string | null;
     startTime: string | null;

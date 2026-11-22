@@ -281,7 +281,7 @@ export const ShiftManagementPage: React.FC = () => {
                         {dayNamesVi.map((name, index) => {
                             const dayItem = weeklySchedule?.days?.[index];
                             const dateStr = dayItem?.date || '';
-                            const isAssigned = dayItem?.status === 'ASSIGNED';
+                            const isAssigned = dayItem?.status === 'SHIFT';
 
                             return (
                                 <div

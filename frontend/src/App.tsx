@@ -7,6 +7,7 @@ import { EmployeeListPage } from './features/employees/EmployeeListPage';
 import { EmployeePortalPage } from './features/portal/EmployeePortalPage';
 import { DepartmentListPage } from './features/departments/DepartmentListPage';
 import { ShiftManagementPage } from './features/shifts/ShiftManagementPage';
+import { AttendanceHistoryPage } from './features/attendance/AttendanceHistoryPage';
 
 // Guard bảo vệ Route: Kiểm tra đăng nhập và phân quyền theo Role
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole?: string }> = ({
@@ -51,7 +52,7 @@ function App() {
                     <Route path="employees" element={<EmployeeListPage />} />
                     <Route path="departments" element={<DepartmentListPage />} />
                     <Route path="shifts" element={<ShiftManagementPage />} />
-                    <Route path="attendance" element={<div className="p-4 text-slate-500">Chức năng Lịch sử Chấm công đang hoàn thiện</div>} />
+                    <Route path="attendance" element={<AttendanceHistoryPage />} />
                 </Route>
 
                 {/* Khu vực Cổng thông tin Nhân viên */}
