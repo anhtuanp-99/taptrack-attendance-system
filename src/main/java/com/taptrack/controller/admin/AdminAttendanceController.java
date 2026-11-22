@@ -23,7 +23,7 @@ public class AdminAttendanceController {
     private final UnknownCardLogRepository unknownRepo;
 
     @GetMapping
-    public ApiResponse<PageResponse<MyAttendanceResponse>> list(
+    public ApiResponse<PageResponse<AdminAttendanceResponse>> list(
             @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) Long departmentId,
             @RequestParam String from,

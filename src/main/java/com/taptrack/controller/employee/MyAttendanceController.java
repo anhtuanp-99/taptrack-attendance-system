@@ -1,6 +1,7 @@
 package com.taptrack.controller.employee;
 
 import com.taptrack.dto.response.*;
+import com.taptrack.entity.Employee;
 import com.taptrack.exception.AppException;
 import com.taptrack.exception.ErrorCode;
 import com.taptrack.repository.EmployeeRepository;
@@ -8,6 +9,7 @@ import com.taptrack.security.UserPrincipal;
 import com.taptrack.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -20,6 +22,26 @@ public class MyAttendanceController {
     private final AttendanceService attendanceService;
     private final ShiftService shiftService;
     private final EmployeeRepository employeeRepo;
+
+    @GetMapping("/me")
+    @Transactional(readOnly = true)
+    public ApiResponse<EmployeeResponse> me(@AuthenticationPrincipal UserPrincipal p) {
+        Employee emp = employeeRepo.findByAccountId(p.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        return ApiResponse.ok(new EmployeeResponse(
+                emp.getId(),
+                emp.getAccount().getId(),
+                emp.getAccount().getEmail(),
+                emp.getAccount().getFullName(),
+                emp.getDepartment().getId(),
+                emp.getDepartment().getName(),
+                emp.getEmployeeCode(),
+                emp.getCardCode(),
+                emp.getJobTitle(),
+                emp.getEmploymentStatus()
+        ));
+    }
 
     @GetMapping("/my-attendance")
     public ApiResponse<PageResponse<MyAttendanceResponse>> myAttendance(

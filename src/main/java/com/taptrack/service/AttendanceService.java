@@ -38,9 +38,9 @@ public class AttendanceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<MyAttendanceResponse> adminHistory(Long employeeId, Long departmentId,
-                                                   LocalDate from, LocalDate to,
-                                                   int page, int size) {
+    public Page<AdminAttendanceResponse> adminHistory(Long employeeId, Long departmentId,
+                                                      LocalDate from, LocalDate to,
+                                                      int page, int size) {
         Pageable p = PageRequest.of(page, size, Sort.by("workDate").descending());
         return attendanceRepo.findAll((root, q, cb) -> {
             var ps = new ArrayList<Predicate>();
@@ -48,7 +48,7 @@ public class AttendanceService {
             if (departmentId != null)  ps.add(cb.equal(root.get("employee").get("department").get("id"), departmentId));
             ps.add(cb.between(root.get("workDate"), from, to));
             return cb.and(ps.toArray(new Predicate[0]));
-        }, p).map(mapper::toMyAttendance);
+        }, p).map(mapper::toAdminAttendance);
     }
 
     @Transactional

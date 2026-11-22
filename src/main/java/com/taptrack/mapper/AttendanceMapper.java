@@ -16,6 +16,25 @@ public class AttendanceMapper {
                 r.isManualEdit());
     }
 
+    public AdminAttendanceResponse toAdminAttendance(AttendanceRecord r) {
+        return new AdminAttendanceResponse(
+                r.getId(),
+                r.getEmployee().getId(),
+                r.getEmployee().getEmployeeCode(),
+                r.getEmployee().getAccount().getFullName(),
+                r.getEmployee().getDepartment().getName(),
+                r.getWorkDate(),
+                r.getCheckInTime(),
+                r.getCheckOutTime(),
+                r.getCheckInStatus(),
+                r.getCheckOutStatus(),
+                r.getLateMinutes(),
+                r.getEarlyLeaveMinutes(),
+                r.isManualEdit(),
+                r.getEditedAt(),
+                r.getEditReason());
+    }
+
     public AttendanceWebSocketMessage toWsMessage(AttendanceRecord r, String type) {
         return new AttendanceWebSocketMessage(
                 type,
